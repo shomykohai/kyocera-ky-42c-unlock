@@ -157,6 +157,6 @@ Otherwise, you can use the old `python` script
 This project is licensed under `AGPL-3.0-or-later`. See [LICENSE](LICENSE) for details.
 
 This project also includes third party code:
-* [gpt](payload/src/gpt.c) by [@R0rt1z2], licensed under the `GPL-3.0-or-later` license.
-* [penumbra](https://github.com/shomykohai/penumbra) by [@shomykohai]. The code used is licensed under the `AGPL-3.0-or-later` license.
-* [mtk-payloads](https://github.com/shomykohai/mtk-payloads) by [@shomykohai]. The code used is licensed under the `MIT` license.
+* [gpt](payload/src/gpt.c) by [@R0rt1z2](https://github.com/R0rt1z2), licensed under the `GPL-3.0-or-later` license.
+* [penumbra](https://github.com/shomykohai/penumbra) by [@shomykohai](https://github.com/shomykohai). The code used is licensed under the `AGPL-3.0-or-later` license.
+* [mtk-payloads](https://github.com/shomykohai/mtk-payloads) by [@shomykohai](https://github.com/shomykohai). The code used is licensed under the `MIT` license.
