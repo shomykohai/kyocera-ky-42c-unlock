@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag of the release to create or update
+        required: true
+        type: string
+      prerelease:
+        description: Mark the release as a prerelease
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  payload:
+    name: Build payload
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Install ARM toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi
+
+      - name: Build payload
+        run: make
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: payload
+          path: bin/*.bin
+
+  tool:
+    name: Build tool (${{ matrix.label }})
+    needs: payload
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux
+            ext: ''
+          - os: macos-latest
+            label: macos
+            ext: ''
+          - os: windows-latest
+            label: windows
+            ext: .exe
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@nightly
+
+      - name: Download payload
+        uses: actions/download-artifact@v7
+        with:
+          name: payload
+          path: bin
+
+      - name: Install Linux deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libudev-dev
+
+      - name: Build tool
+        run: cargo build --release
+
+      - name: Rename binary
+        shell: bash
+        run: |
+          mv "target/release/kyocera-ky-42c-unlock${{ matrix.ext }}" \
+             "kyocera-ky-42c-unlock-${{ matrix.label }}${{ matrix.ext }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: tool-${{ matrix.label }}
+          path: kyocera-ky-42c-unlock-${{ matrix.label }}${{ matrix.ext }}
+
+  release:
+    name: Upload to releases
+    needs: [payload, tool]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: assets
+          merge-multiple: true
+
+      - name: Upload to release
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" assets/* --clobber
+            exit 0
+          fi
+
+          flags=()
+          if [ "$PRERELEASE" = true ]; then
+            flags+=(--prerelease)
+          fi
+
+          gh release create "$TAG" assets/* \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --generate-notes \
+            "${flags[@]}"
