@@ -38,7 +38,7 @@ def main():
         level=logging.DEBUG if args.verbose else logging.INFO,
     )
 
-    path = 'bin/unlock.bin' if args.command == 'unlock' else 'bin/patch.bin'
+    path = '../bin/unlock.bin' if args.command == 'unlock' else '../bin/patch.bin'
     with open(path, 'rb') as f:
         data = f.read()
         logging.info(f'Using payload from {path}')
