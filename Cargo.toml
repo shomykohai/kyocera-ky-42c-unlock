@@ -1,0 +1,17 @@
+[package]
+name = "kyocera-ky-42c-unlock"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.7", features = ["derive"] }
+indicatif = "0.18.6"
+penumbra-mtk = { git = "https://github.com/shomykohai/penumbra", version = "2.0.0", default-features = false, features = ["exploits", "serial"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+debug = false
