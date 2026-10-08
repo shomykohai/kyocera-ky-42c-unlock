@@ -19,11 +19,6 @@ SECTIONS
   .rodata   : { *(.rodata .rodata.* .gnu.linkonce.r.*) } :text
   .data     : { *(.data .data.* .gnu.linkonce.d.*) } :data
   .bss      : { __bss_start = .; *(.bss .bss.* .gnu.linkonce.b.*) *(COMMON) __bss_end = .; } :bss
-  .payload_end ALIGN(4) : {
-      __payload_end_start = .;
-      KEEP(*(.payload_end))
-      __payload_end_end = .;
-  }
   . = ALIGN(4);
 
   /* Provide weak definitions for exception handling symbols referenced by libgcc */

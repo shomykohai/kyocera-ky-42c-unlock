@@ -15,20 +15,14 @@
 #include <seccfg.h>
 #include <gpt.h>
 
-extern uint8_t __bss_start[], __bss_end[];
+extern u8 __bss_start[], __bss_end[];
 
-// Hack to keep BSS section inside the payload,
-// so that we can be sure that nothing overlaps.
-// Shouldn't happen, but better be sure
-__attribute__((used, section(".payload_end")))
-u32 dummy = 0;
-
-static int mmc_read_block_cb(uint32_t blk, void *buf, void *ctx) {
+static int mmc_read_block_cb(u32 blk, void *buf, void *ctx) {
     return mmc_read_block((struct mmc_dev *)ctx, blk, buf);
 }
 
 static void platform_wdt_reset(void) {
-    volatile u32 *wdt = (volatile u32 *)0x10007000;
+    volatile u32 *wdt = (volatile u32 *)WDT_BASE_ADDR;
     wdt[6] = 0x1971;
     wdt[0] = 0x22000014;
     wdt[5] = 0x1209;
@@ -51,6 +45,8 @@ __attribute__ ((section(".text.main"), used)) int main(void) {
     printf("\nHello from payload :)\n\n");
     printf("Copyright (C) 2026 Shomy\n");
     printf("SPDX-License-Identifier: AGPL-3.0-or-later\n\n");
+
+    printf("Build date: %s %s (%s)\n", __DATE__, __TIME__, PAYLOAD_VERSION);
 
     sej_init(SEJ_BASE_ADDR);
     mmc_dev_setup(&g_mmc_dev, MSDC0_BASE_ADDR, 1, NULL);

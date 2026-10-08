@@ -1,5 +1,8 @@
 #pragma once
 
+#define PL_BASE_ADDR         0x00201000
+#define PL_END_ADDR          0x0023FFFF
+
 #define SEJ_BASE_ADDR        0x1000A000
 #define MSDC0_BASE_ADDR      0x11230000
 #define WDT_BASE_ADDR        0x10007000
