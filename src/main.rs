@@ -32,7 +32,12 @@ use penumbra_mtk::{DeviceBuilder, MtkPort, Partition, PlProtocol, PortBackend, P
 const MAX_PAYLOAD_SIZE: usize = 0x900000;
 const UNLOCK_PAYLOAD: &[u8] = include_bytes!("../bin/unlock.bin");
 const PATCH_PAYLOAD: &[u8] = include_bytes!("../bin/patch.bin");
-const DA: &[u8] = include_bytes!("MT6761.bin");
+
+#[repr(C, align(4))]
+struct AlignedDa<const N: usize>([u8; N]);
+
+static DA: AlignedDa<{ include_bytes!("MT6761.bin").len() }> =
+    AlignedDa(*include_bytes!("MT6761.bin"));
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -90,11 +95,18 @@ impl ProgressBarWrapper {
     }
 }
 
-fn handle_da_cmd(port: PortType, cmd: Commands) -> Result<()> {
-    let mut dev = DeviceBuilder::new(port).with_da_data(DA).build()?;
+fn handle_da_cmd(port: PortType, payload: &[u8], cmd: Commands) -> Result<()> {
+    let mut dev = DeviceBuilder::new(port).with_da_data(&DA.0).build()?;
 
     println!("Initializing device...");
     dev.init()?;
+
+    println!("Sending payload of size {} bytes", payload.len());
+    {
+        let mut pl = PlProtocol::new(dev.port_mut());
+        pl.send_image("lk", payload)?;
+        pl.boot_image("lk")?;
+    }
 
     println!("Entering DA mode...");
 
@@ -197,19 +209,19 @@ fn main() {
 
     println!("Found device: {:?}", port.get_port_name());
 
-    let mut pl = PlProtocol::new(&mut port);
-    pl.handshake().expect("Failed to handshake with device");
+    if matches!(&cmd, Commands::DumpPartitions { .. } | Commands::WritePartition { .. }) {
+        if let Err(e) = handle_da_cmd(port, &payload, cmd) {
+            eprintln!("Error: {e:#}");
+            exit(1);
+        }
+    } else {
+        let mut pl = PlProtocol::new(&mut port);
+        pl.handshake().expect("Failed to handshake with device");
 
-    println!("Sending payload of size {} bytes", payload.len());
+        println!("Sending payload of size {} bytes", payload.len());
 
-    pl.send_image("lk", &payload).expect("Failed to send payload");
-    pl.boot_image("lk").expect("Failed to jump to payload");
-
-    if matches!(&cmd, Commands::DumpPartitions { .. } | Commands::WritePartition { .. })
-        && let Err(e) = handle_da_cmd(port, cmd)
-    {
-        eprintln!("Error: {e}");
-        exit(1);
+        pl.send_image("lk", &payload).expect("Failed to send payload");
+        pl.boot_image("lk").expect("Failed to jump to payload");
     }
 
     println!("Done!");
