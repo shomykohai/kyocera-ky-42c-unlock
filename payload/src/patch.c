@@ -1,3 +1,8 @@
+/*
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Shomy
+ */
+
 #include <types.h>
 #include <libc.h>
 #include <kyocera.h>
@@ -42,7 +47,7 @@ __attribute__ ((section(".text.main"), used)) int main(void) {
 
     // ?? b5 ?? ?? ?? 4? ?? 68 ?? 68
     const u16 sec_usbdl_pattern[] = { 0xB500, 0x0000, 0x4000 , 0x6800, 0x6800 };
-    const u16 sec_usbdl_mask[] = { 0xFFFF, 0x0000, 0xF000, 0xFF00, 0xFF00 };
+    const u16 sec_usbdl_mask[] = { 0xFF00, 0x0000, 0xF000, 0xFF00, 0xFF00 };
 
     len = sizeof(sec_usbdl_pattern)/sizeof(sec_usbdl_pattern[0]);
 
@@ -55,15 +60,8 @@ __attribute__ ((section(".text.main"), used)) int main(void) {
 
         invalidate_icache_range(sec_usbdl, 4);
 
-        __asm__ volatile (
-            "mov lr, %0\n"
-            "bx lr\n"
-            : : "r"(ret) : "lr"
-        );
+        return (int)((ret + 8) | 1);
     }
 
-
-
-    for(;;)
-        __asm__ volatile ("wfi" : : : "memory");
+    return 0;
 }
